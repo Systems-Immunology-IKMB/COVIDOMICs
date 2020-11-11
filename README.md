@@ -18,4 +18,5 @@ $          Lead Contacts for codes Joana P. Bernardes and Neha M
 - scRNA-seq 
 - BCR 
 - Metabolic model
+- TF enrichment
 - Data Integration 
