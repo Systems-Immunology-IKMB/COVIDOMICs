@@ -1,0 +1,58 @@
+PatientID,Site,Remission,Gender,Age,TimepointFromOnset,Patient,Name,scRNAseqID,RNAseqID,Pseudotime,Disease traj,color_code
+#001,Kiel,R,m,80,8.00,#001,PC_Ki001_TA,J09806,J14108,4,Complicated (recovering),#E65826
+#001,Kiel,R,m,80,10.00,#001,PC_Ki001_TA2,J09810,J14109,4,Complicated (recovering),#E65826
+#001,Kiel,R,m,80,15.00,#001,PC_Ki001_TB,J09809,J14110,5,Mild (recovering),#F99B1C
+#001,Kiel,R,m,80,18.00,#001,PC_Ki001_TB2,,J14111,6,recovery/asymptomatic,#FDC077
+#001,Kiel,R,m,80,21.00,#001,PC_Ki001_TC,J09807,J14112,6,recovery/asymptomatic,#FDC077
+#002,Kiel,NR,m,57,19.00,#002,PC_Ki002_TA,J11987,J14113,1,Complicated (incremental),#E84F8C
+#002,Kiel,NR,m,57,21.00,#002,PC_Ki002_TA2,J11988,J14114,2,Critical,#7031B9
+#003,Kiel,NR,f,80,3.00,#003,PC_Ki003_TA,J09808,J14115,2,Critical,#7031B9
+#004,Kiel,R,m,60,9.00,#004,PC_Ki004_TA,J09811,J14116,1,Complicated (incremental),#E84F8C
+#004,Kiel,R,m,60,11.00,#004,PC_Ki004_TA2,J09813,J14117,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#004,Kiel,R,m,60,16.00,#004,PC_Ki004_TB,J09812,J14118,5,Mild (recovering),#F99B1C
+#005,Kiel,R,m,49,6.00,#005,PC_Ki005_TA,J09818,J14119,1,Complicated (incremental),#E84F8C
+#005,Kiel,R,m,49,8.00,#005,PC_Ki005_TA2,J09814,J14120,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#005,Kiel,R,m,49,13.00,#005,PC_Ki005_TB,J09817,J14121,6,recovery/asymptomatic,#FDC077
+#005,Kiel,R,m,49,16.00,#005,PC_Ki005_TB2,,J14122,6,recovery/asymptomatic,#FDC077
+#006,Kiel,R,m,70,12.00,#006,PC_Ki006_TA,J09816,J14123,5,Mild (recovering),#F99B1C
+#006,Kiel,R,m,70,14.00,#006,PC_Ki006_TA2,J09820,J14124,5,Mild (recovering),#F99B1C
+#006,Kiel,R,m,70,19.00,#006,PC_Ki006_TB,J09819,J14125,6,recovery/asymptomatic,#FDC077
+#006,Kiel,R,m,70,51.00,#006,PC_Ki006_rec,J16418,J16395,7,Recovered,#51BBFE
+#c002,Cologne,R,f,63,18.00,#c002,PC_Co002_TA,J09825,J14131,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#c002,Cologne,R,f,63,21.00,#c002,PC_Co002_TA2,,,5,Mild (recovering),#F99B1C
+#c003,Cologne,R,m,56,18.00,#c003,PC_Co003_TA,J09821,J14132,4,Complicated (recovering),#E65826
+#c003,Cologne,R,m,56,20.00,#c003,PC_Co003_TA2,,J14133,5,Mild (recovering),#F99B1C
+#c003,Cologne,R,m,56,24.00,#c003,PC_Co003_TB,J09815,J14134,6,recovery/asymptomatic,#FDC077
+#c004,Cologne,R,m,74,9.00,#c004,PC_Co004_TA,,J14135,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#c004,Cologne,R,m,74,14.00,#c004,PC_Co004_TA2,,J14136,1,Complicated (incremental),#E84F8C
+#c004,Cologne,R,m,74,16.00,#c004,PC_Co004_TB,J15442,J14137,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#c004,Cologne,R,m,74,20.00,#c004,PC_Co004_TB2,,J14138,4,Complicated (recovering),#E65826
+#c004,Cologne,R,m,74,24.00,#c004,PC_Co004_TC,J15440,J14139,5,Mild (recovering),#F99B1C
+#c011,Cologne,R,f,78,4.00,#c011,PC_Co011_TA,J09827,J14127,6,recovery/asymptomatic,#FDC077
+#c011,Cologne,R,f,78,7.00,#c011,PC_Co011_TA2,,J14128,6,recovery/asymptomatic,#FDC077
+#c011,Cologne,R,f,78,11.00,#c011,PC_Co011_TB,J09824,J14129,6,recovery/asymptomatic,#FDC077
+#c011,Cologne,R,f,78,14.00,#c011,PC_Co011_TB2,,J14130,6,recovery/asymptomatic,#FDC077
+#c012,Cologne,R,f,54,29.00,#c012,PC_Co012_TA,J09823,J14140,2,Critical,#7031B9
+#c012,Cologne,R,f,54,36.00,#c012,PC_Co012_TB,J09822,J14141,3,Complicated with hyperinflammatory syndrom,#A04E9E
+#c012,Cologne,R,f,54,43.00,#c012,PC_Co012_TC,J09828,J14142,5,Mild (recovering),#F99B1C
+#c012,Cologne,R,f,54,50.00,#c012,PC_Co012_TD,,J14143,5,Mild (recovering),#F99B1C
+#c012,Cologne,R,f,54,57.00,#c012,PC_Co012_TE,J09829,J14144,5,Mild (recovering),#F99B1C
+#c013,Cologne,R,f,69,5.00,#c013,PC_Co013_TA,,J14145,4,Complicated (recovering),#E65826
+#c013,Cologne,R,f,69,12.00,#c013,PC_Co013_TB,,J14146,5,Mild (recovering),#F99B1C
+#c022,Cologne,R,f,50,46.00,#c022,PC_Co022_TA,J09826,J14147,4,Complicated (recovering),#E65826
+#c022,Cologne,R,f,50,48.00,#c022,PC_Co022_TA2,,J14148,5,Mild (recovering),#F99B1C
+#007,Kiel,R,m,29,45.00,#007,PC_Ki007_rec,J11989,J14126,7,Recovered,#51BBFE
+#008,Kiel,R,m,57,0.00,#008,PC_Ki008_control,,J16391,0,Healthy,#A7A9AC
+#009,Kiel,R,f,42,0.00,#009,PC_Ki009_control,J15439,J16392,0,Healthy,#A7A9AC
+#011,Kiel,R,m,57,0.00,#011,PC_Ki011_control,,J16393,0,Healthy,#A7A9AC
+#010,Kiel,R,m,65,0.00,#010,PC_Ki010_control,J15438,J16394,0,Healthy,#A7A9AC
+ctr10,Kiel,R,m,44,0.00,ctr10,SYS_10_control,,I21803,0,Healthy,#A7A9AC
+ctr11,Kiel,R,m,40,0.00,ctr11,SYS_11_control,,I21812,0,Healthy,#A7A9AC
+ctr2,Kiel,R,f,41,0.00,ctr2,SYS_2_control,,I21759,0,Healthy,#A7A9AC
+ctr3,Kiel,R,m,42,0.00,ctr3,SYS_3_control,H28577,I21793,0,Healthy,#A7A9AC
+ctr4,Kiel,R,m,37,0.00,ctr4,SYS_4_control,,I21808,0,Healthy,#A7A9AC
+ctr5,Kiel,R,m,37,0.00,ctr5,SYS_5_control,H28579,I21746,0,Healthy,#A7A9AC
+ctr6,Kiel,R,m,44,0.00,ctr6,SYS_6_control,,I21800,0,Healthy,#A7A9AC
+ctr7,Kiel,R,m,38,0.00,ctr7,SYS_7_control,H28580,I21794,0,Healthy,#A7A9AC
+ctr8,Kiel,R,f,35,0.00,ctr8,SYS_8_control,,I21765,0,Healthy,#A7A9AC
+ctr9,Kiel,R,m,35,0.00,ctr9,SYS_9_control,,I21824,0,Healthy,#A7A9AC
