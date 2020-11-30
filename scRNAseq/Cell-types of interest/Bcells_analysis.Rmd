@@ -1,0 +1,454 @@
+---
+title: "Bcell_analysis"
+author: "Joana P. Bernardes"
+date: "11/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(devtools)
+library(SingleR)
+library(knitr)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(topGO)
+library(plyr)
+```
+
+##Load object extracted from merged object
+```{r}
+Bcells <- readRDS('Bcells.rds')
+```
+
+
+## Seurat analysis
+# Normalize object
+```{r}
+Bcells <- NormalizeData(Bcells)
+```
+
+# Scale object using all genes
+```{r}
+all.genes<-rownames(Bcells)
+Bcells <- ScaleData(Bcells, features = all.genes)
+```
+
+## Find object variable genes 
+```{r}
+Bcells<-FindVariableFeatures(Bcells, selection.method = "vst", nfeatures = 2000)
+```
+
+# Run PCA
+# Use elbow plot to define number of dimensions
+```{r}
+Bcells <- RunPCA(Bcells,npcs = 80, ndims.print = 1:5)
+ElbowPlot(Bcells, ndims = 80)
+```
+
+# run UMAP
+```{r}
+Bcells <- RunUMAP(object = Bcells, dims = 1:80)
+
+```
+
+
+
+# plot basic UMAPs
+```{r}
+p1<-DimPlot(object = Bcells, reduction = "umap", pt.size = 0.1,label = FALSE, group.by = "orig.ident")
+
+p2<-DimPlot(object = Bcells, reduction = "umap", pt.size = 0.1,label = FALSE, group.by = "Patient") 
+
+color<-brewer.pal(n = 11, name = "BrBG")
+p3<-DimPlot(object = Bcells, reduction = 'umap', pt.size = 0.1, label = FALSE, group.by ="Timepoint",
+            order = c('TA', 'TA2', 'TB', 'TC', 'TE', 'rec'),
+            cols=rev(color))
+
+p4<-DimPlot(object = Bcells, reduction = "umap", pt.size = 0.1, label = FALSE, group.by = "Pseudotime",
+            cols = c('#A7A9AC',"#E84F8C","#7031B9", '#A04E9E',"#E65826","#F99B1C","#FDC077",  '#51BBFE'))
+
+p5<-DimPlot(object = Bcells, reduction = "umap" ,pt.size = 0.1,label = FALSE, group.by = "class") 
+CombinePlots(plots = list(p1,p2,p3,p4, p5), ncol=1)
+```
+
+
+## Clustering
+# Find neighbours
+```{r}
+Bcells <- FindNeighbors(Bcells,  dims = 1:80)
+```
+
+# Calculate clusters
+```{r}
+Bcells <- FindClusters(Bcells, resolution = 0.2)
+```
+
+
+# Identify signature genes per Cluster
+```{r}
+Idents(Bcells)<-Bcells$seurat_clusters
+All_pre.markers <- FindAllMarkers(Bcells, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+```
+
+# Select top10 genes
+```{r}
+top10 <- All_pre.markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+utop10<-unique(top10$gene)
+color<-brewer.pal(n = 9, name = "RdBu")
+```
+
+# Plot top10 signature genes of each cluster
+```{r}
+DotPlot(Bcells, features=utop10,  dot.scale = 8) +
+  scale_color_gradientn(colours  = rev(color)) + coord_flip() + scale_y_discrete(position = "right") +
+  theme( axis.text.x = element_text(angle = 60, hjust = 0))
+```
+
+
+
+## Biomarkers of B cell subtypes in calculated clusters
+# Mature B cells
+```{r}
+Idents(Bcells)<-Bcells$seurat_clusters
+VlnPlot(object = Bcells, features = c("CD19", "TNFRSF13B", 'CD27'), pt.size = 0)
+```
+
+# Plasmablast cells
+```{r}
+VlnPlot(object = Bcells, features = c( "CD27", "CD38", "MZB1", 'SLAMF7'), pt.size = 0)
+
+```
+
+# Plasmablast cells negative
+```{r}
+VlnPlot(object = Bcells, features = c( "MS4A1", "IGHD", "IL4R", "CD22"), pt.size = 0)
+```
+
+# Naïve B cells 
+```{r}
+VlnPlot(object = Bcells, features = c( "MS4A1","IGHD","IGHM"), pt.size = 0)
+```
+
+# Naïve B cells negative
+```{r}
+VlnPlot(object = Bcells, features = c( "CD27","IGHA1","TNFRSF13B"), pt.size = 0)
+```
+
+# Memory B cells 
+```{r}
+VlnPlot(object = Bcells, features = c( "PTPRC","CD27", 'CD19'), pt.size = 0)
+```
+
+# Memory B cells negative
+```{r}
+VlnPlot(object = Bcells, features = c( "CD27","IGHA1","TNFRSF13B"), pt.size = 0)
+```
+
+# Transitional B cells 
+```{r}
+VlnPlot(object = Bcells, features = c( "H1FX","MYL12B", 'HIST1H1E'), pt.size = 0)
+```
+
+# Neutrophil-like B cells 
+```{r}
+VlnPlot(object = Bcells, features = c( 'ELANE','MPO', 'CAMP'), pt.size = 0)
+```
+
+## Identification of B cell lineages 
+# Add B cell lineages to individual clusters
+```{r}
+Idents(Bcells)<-Bcells$seurat_clusters
+Bcell_subtypes<-c('Memory B cells', 'Naïve B cells', 'Plasmablasts', 'Memory B cells', 'Plasmablasts', 'Neutrophil-like',
+                'Memory B cells',  'Transitional B cells', 'Memory B cells', 'Memory B cells', 
+                'Memory B cells', 'Memory B cells', 'Memory B cells', 'Memory B cells', 'Memory B cells', 
+                'Memory B cells', 'Memory B cells', 'Plasmablasts',
+                'Memory B cells', 'Memory B cells', 'Plasmablasts', 'Plasmablasts')
+names(Bcell_subtypes)<-levels(Bcells)
+Bcells<- RenameIdents(Bcells, Bcell_subtypes)
+Bcells$Bcell_subtypes<- Idents(Bcells)
+```
+
+# plot B cell specific UMAPs
+```{r}
+p1<-DimPlot(object = Bcells, reduction = "umap", pt.size = 0.1,label = FALSE, group.by = "Bcell_subtypes",
+          cols =  c("#5F0F40", "#E12C28", '#00A79D', '#114C5C', '#F68B29'))
+
+p2 <- FeaturePlot(object = Bcells, features = c( 'ELANE', 'MPO', 'CAMP'), 
+                  pt.size = 2, order=TRUE, combine=F)
+fix.sc <- scale_color_gradientn( colours = c('cornsilk2', '#114C5C'),limits = c(0, 2))
+p3 <- lapply(p2, function (x) x + fix.sc)
+```
+
+# Genes of interest
+```{r}
+Idents(Bcells)<-Bcells$Bcell_subtypes
+p1<-VlnPlot(Bcells, features =c('DERL3','CD38','PIM2', "IFI6","XBP1", 'SLC1A4'), group.by = 'Bcell_subtypes', 
+        pt.size = 0,ncol = 6,
+        cols = c("#5F0F40", "#E12C28", '#00A79D', '#114C5C', '#F68B29'))
+
+Idents(Bcells)<-Bcells$Pseudotime
+my_levels <- c("0","1",'2',"3",
+               "4","5","6",'7')
+Idents(Bcells) <- factor(Idents(Bcells), levels= my_levels)
+p2<-VlnPlot(Bcells, features =c('DERL3','CD38','PIM2', "IFI6","XBP1", 'SLC1A4'), group.by = 'Pseudotime', 
+            pt.size = 0,ncol = 6,
+        cols = c("#A7A9AC", '#E84F8C', "#7031B9", "#A04E9E",'#E65826',"#F99B1C",'#FDC077','#51BBFE'))
+CombinePlots(plots = list(p1,p2), ncol=1)
+```
+
+## Subset Plasmablasts
+```{r}
+Idents(Bcells)<-Bcells$Bcell_subtypes
+Plasma<-subset(Bcells, idents='Plasmablasts')
+```
+
+## Subset Memory B cells
+```{r}
+Idents(Bcells)<-Bcells$Bcell_subtypes
+Memory<-subset(Bcells, idents='Memory B cells')
+```
+
+# Identify signature genes of Plasmablasts per Pseudotime
+```{r}
+Idents(Plasma)<-Plasma$Pseudotime
+my_levels <- c("0","1",'2',"3",
+               "4","5","6",'7')
+Idents(Plasma) <- factor(Idents(Plasma), levels= my_levels)
+
+All_pre.markers <- FindAllMarkers(Plasma, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+```
+
+# Select top10 genes
+```{r}
+top10 <- All_pre.markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+utop10<-unique(top10$gene)
+color<-brewer.pal(n = 9, name = "RdBu")
+```
+
+# Plot top10 signature genes of each cluster
+```{r}
+DotPlot(Plasma, features=utop10,  dot.scale = 8) +
+  scale_color_gradientn(colours  = rev(color)) + coord_flip() + scale_y_discrete(position = "right") +
+  theme( axis.text.x = element_text(angle = 60, hjust = 0))
+```
+
+
+## Differantial expressed genes during covid-19
+```{r}
+Idents(Bcells)<-Bcells$Pseudotime
+Cluster.response1 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "1", verbose = FALSE,test.use = 'MAST' )
+Cluster.response1<-subset(Cluster.response1, Cluster.response1$p_val_adj < 0.05)
+Cluster.response1$Gene<-rownames(Cluster.response1)
+Cluster.response1$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response1, Cluster.response1$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response1, Cluster.response1$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 1'
+Cluster.response_Down$signal<-'Upregulated in 1'
+Cluster.response1<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response2 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "2", verbose = FALSE,test.use = 'MAST' )
+Cluster.response2<-subset(Cluster.response2, Cluster.response2$p_val_adj < 0.05)
+Cluster.response2$Gene<-rownames(Cluster.response2)
+Cluster.response2$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response2, Cluster.response2$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response2, Cluster.response2$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 2'
+Cluster.response_Down$signal<-'Upregulated in 2'
+Cluster.response2<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response3 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "3", verbose = FALSE,test.use = 'MAST' )
+Cluster.response3<-subset(Cluster.response3, Cluster.response3$p_val_adj < 0.05)
+Cluster.response3$Gene<-rownames(Cluster.response3)
+Cluster.response3$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response3, Cluster.response3$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response3, Cluster.response3$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 3'
+Cluster.response_Down$signal<-'Upregulated in 3'
+Cluster.response3<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response4 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "4", verbose = FALSE,test.use = 'MAST' )
+Cluster.response4<-subset(Cluster.response4, Cluster.response4$p_val_adj < 0.05)
+Cluster.response4$Gene<-rownames(Cluster.response4)
+Cluster.response4$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response4, Cluster.response4$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response4, Cluster.response4$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 4'
+Cluster.response_Down$signal<-'Upregulated in 4'
+Cluster.response4<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response5 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "5", verbose = FALSE,test.use = 'MAST' )
+Cluster.response5<-subset(Cluster.response5, Cluster.response5$p_val_adj < 0.05)
+Cluster.response5$Gene<-rownames(Cluster.response5)
+Cluster.response5$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response5, Cluster.response5$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response5, Cluster.response5$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 5'
+Cluster.response_Down$signal<-'Upregulated in 5'
+Cluster.response5<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response6 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "6", verbose = FALSE,test.use = 'MAST' )
+Cluster.response6<-subset(Cluster.response6, Cluster.response6$p_val_adj < 0.05)
+Cluster.response6$Gene<-rownames(Cluster.response6)
+Cluster.response6$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response6, Cluster.response6$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response6, Cluster.response6$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 6'
+Cluster.response_Down$signal<-'Upregulated in 6'
+Cluster.response6<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+Cluster.response7 <-FindMarkers(Bcells, ident.1 = "0", ident.2 = "7", verbose = FALSE,test.use = 'MAST' )
+Cluster.response7<-subset(Cluster.response7, Cluster.response7$p_val_adj < 0.05)
+Cluster.response7$Gene<-rownames(Cluster.response7)
+Cluster.response7$Gene=NULL
+Cluster.response_Down<-subset(Cluster.response7, Cluster.response7$avg_logFC < 0)
+Cluster.response_Up<-subset(Cluster.response7, Cluster.response7$avg_logFC > 0)
+Cluster.response_Up$signal<-'Downregulated in 7'
+Cluster.response_Down$signal<-'Upregulated in 7'
+Cluster.response7<-rbind(Cluster.response_Up, Cluster.response_Down)
+
+# Merge Differentially expressed genes
+Dif_Exp<-rbind(Cluster.response1, Cluster.response2, Cluster.response3, Cluster.response4, Cluster.response5, Cluster.response6, Cluster.response7)
+```
+
+
+## GO enrichment analysis (example)
+#Subset genes
+```{r}
+table<-subset(Dif_Exp, Dif_Exp$signal %in% 'Upregulated in 1')
+```
+
+#TopGO analysis
+```{r}
+Genes=rownames(table)
+anno <- AnnotationDbi::select(org.Hs.eg.db, 
+                              keys=rownames(Plasma), 
+                              columns=c("SYMBOL","SYMBOL", "GENENAME", "ENSEMBL"),
+                              keytype="SYMBOL")
+anSig1 <- as.data.frame(subset(anno, SYMBOL %in% Genes))
+
+genes<-rownames(Plasma)
+overallBaseMean=as.matrix(genes)
+rownames(overallBaseMean)<-overallBaseMean
+onts = c( "BP")
+geneIDs = rownames(overallBaseMean)
+inUniverse = geneIDs %in% c(rownames(overallBaseMean)) 
+inSelection =  geneIDs %in% anSig1$SYMBOL 
+alg <- factor( as.integer( inSelection[inUniverse] ) )
+names(alg) <- geneIDs[inUniverse]
+tab = as.list(onts)
+names(tab) = onts
+
+for(i in 1:3){
+  
+  ## prepare data
+  tgd <- new( "topGOdata", ontology=onts[i], allGenes = alg, nodeSize=5,
+              annot=annFUN.org, mapping="org.Hs.eg.db", ID = "symbol" )
+  
+  ## run tests
+  resultTopGO.elim <- runTest(tgd, algorithm = "elim", statistic = "Fisher" )
+  resultTopGO.classic <- runTest(tgd, algorithm = "classic", statistic = "Fisher" )
+  
+  ## look at results
+  tab[[i]] <- GenTable( tgd, Fisher.elim = resultTopGO.elim, 
+                        Fisher.classic = resultTopGO.classic,
+                        orderBy = "Fisher.classic" , topNodes = 200)
+  
+}
+
+```
+
+# Write results in table
+```{r}
+topGOResults <- rbind.fill(tab)
+
+for(i in 1:length(topGOResults$GO.ID)){
+  go_id <- as.vector(topGOResults[i,1])
+  alleges <- get(go_id, org.Hs.egGO2ALLEGS)
+  genes <- unlist(mget(alleges, org.Hs.egSYMBOL))
+  #print(as.vector(genes))
+  genes_in_cat <- intersect(as.vector(genes), as.vector(Genes))
+  #print(genes_in_cat)
+  gene_sym_in_cat <- as.vector(unlist(mget(unlist(mget(genes_in_cat, 
+                                                       org.Hs.egSYMBOL2EG)), org.Hs.egSYMBOL)))
+  gene_sym_in_cat_str <- ""
+  
+  if(length(genes_in_cat) > 0){
+    for(j in 1:length(gene_sym_in_cat)){
+      gene_sym_in_cat_str <- paste(gene_sym_in_cat_str, 
+                                   gene_sym_in_cat[j], sep = ',')
+    }
+  }
+  
+  topGOResults$Genes[i] <- gene_sym_in_cat_str
+  topGOResults$no_of_genes[i] <- length(gene_sym_in_cat)
+}
+```
+
+# select top 10 GO terms
+```{r}
+topGOResults_top <- topGOResults[order(topGOResults$Fisher.classic),] 
+topGOResults_top<-head(topGOResults_top,10)
+```
+
+# GOs of interest
+```{r}
+plot_data<-read.csv2('GO_interest_Plasmablast.csv')
+plot_data$Gene.ratio<-plot_data$Significant/plot_data$Annotated
+plot_data$Pvalue<--1*log10(plot_data$Fisher.classic)
+```
+
+# Plot top GO terms
+```{r}
+p <- ggplot(plot_data, mapping = aes(x=Group, y=reorder(Term, Order), size=Gene.ratio, color=Pvalue))
+p <- p + geom_point()
+p <- p + scale_x_discrete(limits=c('1', '2', '3', '4' , '5', '6'))
+p <- p + xlab("Pseudotime") + ylab("Term")
+p <- p + scale_colour_gradient(high="#990000", low="#FF9999", name='P-value')
+p <- p + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
+                            axis.text.x = element_text(size=14, color = "black", angle=45, hjust=1), 
+                            axis.title = element_text(size = 20))
+p
+```
+
+## BCR 
+
+# IGs of interest
+```{r}
+Idents(Plasma)<-Plasma$Pseudotime
+my_levels <- c("0","1",'2',"3",
+               "4","5","6",'7')
+Idents(Plasma) <- factor(Idents(Plasma), levels= my_levels)
+p1<-VlnPlot(Plasma, features =c('IGHA1','IGHA2','IGHG1', "IGHG2"), group.by = 'Pseudotime', 
+            pt.size = 0,ncol = 4,
+        cols = c("#A7A9AC", '#E84F8C', "#7031B9", "#A04E9E",'#E65826',"#F99B1C",'#FDC077','#51BBFE'))
+
+Idents(Memory)<-Memory$Pseudotime
+my_levels <- c("0","1",'2',"3",
+               "4","5","6",'7')
+Idents(Memory) <- factor(Idents(Memory), levels= my_levels)
+p2<-VlnPlot(Memory, features =c('IGHA1','IGHA2','IGHG1', "IGHG2"), group.by = 'Pseudotime', 
+            pt.size = 0,ncol = 4,
+        cols = c("#A7A9AC", '#E84F8C', "#7031B9", "#A04E9E",'#E65826',"#F99B1C",'#FDC077','#51BBFE'))
+```
+
+# Difusion maps for IGs of interest
+```{r}
+p1<-DimPlot(Plasma, group.by = 'V323', split.by = 'Pseudotime', pt.size = 2,
+        cols = c('lightgrey','grey',  'lightpink4','#92c5de','#0571b0' ),
+        order = c('IGHV3-23','no', 'boring'))
+p2<-DimPlot(Plasma, group.by = 'V330', split.by = 'Pseudotime', pt.size = 2,
+        cols = c('lightgrey','grey',  'lightpink4','#92c5de','#0571b0' ),
+        order = c('IGHV3-30','no', 'boring'))
+```
+
+
+
+

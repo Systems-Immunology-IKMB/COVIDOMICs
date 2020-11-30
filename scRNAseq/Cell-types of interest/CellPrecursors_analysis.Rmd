@@ -1,0 +1,247 @@
+---
+title: "CellPrecursors_analysis"
+author: "Joana P. Bernardes"
+date: "11/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(devtools)
+library(SingleR)
+library(knitr)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(topGO)
+library(plyr)
+library(lmerTest)
+```
+
+##Load object extracted from merged object
+```{r}
+Precursors <- readRDS('CellPrecursors.rds')
+```
+
+
+## Seurat analysis
+# Normalize object
+```{r}
+Precursors <- NormalizeData(Precursors)
+```
+
+# Scale object using all genes
+```{r}
+all.genes<-rownames(Precursors)
+Precursors <- ScaleData(Precursors, features = all.genes)
+```
+
+## Find object variable genes 
+```{r}
+Precursors<-FindVariableFeatures(Precursors, selection.method = "vst", nfeatures = 2000)
+```
+
+# Run PCA
+# Use elbow plot to define number of dimensions
+```{r}
+Precursors <- RunPCA(Precursors,npcs = 80, ndims.print = 1:5)
+ElbowPlot(Precursors, ndims = 80)
+```
+
+# run UMAP
+```{r}
+Precursors <- RunUMAP(object = Precursors, dims = 1:80)
+```
+
+
+
+# plot basic UMAPs
+```{r}
+p1<-DimPlot(object = Precursors, reduction = "umap",pt.size = 2,label = TRUE, group.by = "orig.ident")
+
+p2<-DimPlot(object = Precursors, reduction = "umap",pt.size = 2,label = TRUE, group.by = "Patient") 
+
+color<-brewer.pal(n = 11, name = "BrBG")
+p3<-DimPlot(object = Precursors, reduction = 'umap', label = FALSE, group.by ="Timepoint", pt.size = 2, 
+            order = c('TA', 'TA2', 'TB', 'TC', 'TE', 'rec'),
+            cols=rev(color))
+
+p4<-DimPlot(object = Precursors, reduction = "umap",pt.size = 2, label = F, group.by = "Pseudotime",
+            order=c( "0",'7',"1",  "3", "4","5","6", '2'),
+            cols = c("#7031B9", "#FDC077", "#F99B1C", "#E65826",'#A04E9E',"#E84F8C",'#51BBFE','#A7A9AC'))
+CombinePlots(plots = list(p1,p2,p3,p4), ncol=1)
+```
+
+
+## Clustering
+# Find neighbours
+```{r}
+Precursors <- FindNeighbors(Precursors,  dims = 1:80)
+```
+
+# Calculate clusters
+```{r}
+Precursors <- FindClusters(Precursors, resolution = 0.1)
+```
+
+
+
+# Identify signature genes per Pseudotime
+```{r}
+Idents(Precursors)<-Precursors$Pseudotime
+my_levels <- c("0","1",'2', "3", "4","5","6", '7')
+Idents(Precursors) <- factor(Idents(Precursors), levels= my_levels)
+All_pre.markers <- FindAllMarkers(Precursors, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+```
+
+# Select top10 genes
+```{r}
+top10 <- All_pre.markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+utop10<-unique(top10$gene)
+color<-brewer.pal(n = 9, name = "RdBu")
+```
+
+
+# Plot top10 signature genes of each cluster
+```{r}
+DotPlot(Precursors, features=utop10,  dot.scale = 8) +
+  scale_color_gradientn(colours  = rev(color)) + coord_flip() + scale_y_discrete(position = "right") +
+  theme( axis.text.x = element_text(angle = 60, hjust = 0))
+```
+
+
+
+## Cell proportion
+#Load cell proportion table
+```{r}
+table<-read.csv2('Prop_Celltypes_github.csv')
+```
+
+
+## Relative cell porportions
+# Relative monocyte subtypes proportions (percentage)
+```{r}
+table$rel_CMPs<-(table$CMPs.1/table$Total.cells)*100
+table$rel_GMPs<-(table$GMPs.1/table$Total.cells)*100
+table$rel_HSCs<-(table$HSCs.1/table$Total.cells)*100
+table$rel_MEPs<-(table$MEPs.1/table$Total.cells)*100
+```
+
+
+# Plot monocyte subtypes proportions per pseudotime
+```{r}
+table$Pseudotime<-as.character(table$Pseudotime)
+p1 <- ggplot(table, aes(x=Pseudotime, y=rel_CMPs,  group=Pseudotime, color=Pseudotime)) 
+p1 <- p1 +  geom_boxplot()
+p1 <- p1 + geom_point(aes(color = Pseudotime, group=Pseudotime),na.rm = TRUE, size=8)
+p1<- p1 + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
+                             axis.text.x = element_text(size=14, color = "black"), 
+                             axis.title = element_text(size = 20))
+p1<- p1 + scale_x_discrete(limits=c("0","1",'2',"3",
+                                    "4","5","6",'7'))
+p1 <- p1 + scale_color_manual(values = c("#A7A9AC",'#E84F8C',"#7031B9","#A04E9E", "#E65826", "#F99B1C", "#FDC077", "#51BBFE"))
+p1 <- p1 + theme_bw() +theme(legend.position = "none",
+                             text = element_text(size=16),
+                             axis.title.x=element_blank(),
+                             axis.text.x=element_blank(),
+                             axis.ticks.x=element_blank())
+p1 <- p1 + ggtitle("CMPs")
+
+p2 <- ggplot(table, aes(x=Pseudotime, y=rel_GMPs,  group=Pseudotime, color=Pseudotime)) 
+p2 <- p2 +  geom_boxplot()
+p2 <- p2 + geom_point(aes(color = Pseudotime, group=Pseudotime),na.rm = TRUE, size=8)
+p2 <- p2 + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
+                              axis.text.x = element_text(size=14, color = "black"), 
+                              axis.title = element_text(size = 20))
+p2<- p2 + scale_x_discrete(limits=c("0","1",'2',"3",
+                                    "4","5","6",'7'))
+p2 <- p2 + scale_color_manual(values = c("#A7A9AC",'#E84F8C',"#7031B9","#A04E9E", "#E65826", "#F99B1C", "#FDC077", "#51BBFE"))
+p2 <- p2 + theme_bw() +theme(legend.position = "none",
+                             text = element_text(size=16),
+                             axis.title.x=element_blank(),
+                             axis.text.x=element_blank(),
+                             axis.ticks.x=element_blank())
+p2 <- p2 + ggtitle("GMPs")
+
+p3 <- ggplot(table, aes(x=Pseudotime, y=rel_HSCs,  group=Pseudotime, color=Pseudotime)) 
+p3 <- p3 +  geom_boxplot()
+p3 <- p3 + geom_point(aes(color = Pseudotime, group=Pseudotime),na.rm = TRUE, size=8)
+p3 <- p3 + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
+                              axis.text.x = element_text(size=14, color = "black"), 
+                              axis.title = element_text(size = 20))
+p3<- p3 + scale_x_discrete(limits=c("0","1",'2',"3",
+                                    "4","5","6",'7'))
+p3 <- p3 + scale_color_manual(values = c("#A7A9AC",'#E84F8C',"#7031B9","#A04E9E", "#E65826", "#F99B1C", "#FDC077", "#51BBFE"))
+p3 <- p3 + theme_bw() +theme(legend.position = "none",
+                             text = element_text(size=16),
+                             axis.title.x=element_blank(),
+                             axis.text.x=element_blank(),
+                             axis.ticks.x=element_blank())
+p3 <- p3 + ggtitle("HSCs")
+
+p4 <- ggplot(table, aes(x=Pseudotime, y=MEPs.1,  group=Pseudotime, color=Pseudotime)) 
+p4 <- p4 +  geom_boxplot()
+p4 <- p4 + geom_point(aes(color = Pseudotime, group=Pseudotime),na.rm = TRUE, size=8)
+p4 <- p4 + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
+                              axis.text.x = element_text(size=14, color = "black"), 
+                              axis.title = element_text(size = 20))
+p4<- p4 + scale_x_discrete(limits=c("0","1",'2',"3",
+                                    "4","5","6",'7'))
+p4 <- p4 + scale_color_manual(values = c("#A7A9AC",'#E84F8C',"#7031B9","#A04E9E", "#E65826", "#F99B1C", "#FDC077", "#51BBFE"))
+p4 <- p4 + theme_bw() +theme(legend.position = "none",
+                             text = element_text(size=16),
+                             axis.title.x=element_blank(),
+                             axis.text.x=element_blank(),
+                             axis.ticks.x=element_blank())
+p4 <- p4 + ggtitle("MEPs")
+
+
+CombinePlots(plots = list(p1,p2,p3,p4), ncol=1)
+```
+
+
+
+## Different cell proportions through pseudotimes
+# select patients with covid19
+```{r}
+table2<-subset(table, table$Pseudotime %in% c("1",'2',"3",
+                                              "4","5","6",'7'))
+```
+
+# Longitudinal liner mixed model
+```{r}
+fit <- lmer(rel_HSCs ~ Pseudotime + (1|Patient), data=table2, REML = FALSE)
+reduced.fit<- lmer(HSCs.1 ~ 1 + (1|Patient),  data=table2, REML = FALSE)
+anova(reduced.fit,fit )
+```
+
+
+# select control patients
+```{r}
+table_healthy<-subset(table, table$Pseudotime %in% c('0'))
+```
+
+#Mann-whitney test comparing healthy with covid19 patients
+```{r}
+wilcox.test(table2$rel_HSCs, table_healthy$rel_HSCs)
+```
+
+
+# Genes of interest
+```{r}
+Idents(Precursors)<-Precursors$Pseudotime
+my_levels <- c("0","1",'2',"3",
+               "4","5","6",'7')
+Idents(Precursors) <- factor(Idents(Precursors), levels= my_levels)
+
+VlnPlot(Precursors, features =c('BST2','IFITM1', 'IFITM2', 'IFI6'),  pt.size = 0,ncol = 2,
+        cols = c("#A7A9AC", '#E84F8C', "#7031B9", "#A04E9E",'#E65826',"#F99B1C",'#FDC077','#51BBFE'))
+```
+
+
