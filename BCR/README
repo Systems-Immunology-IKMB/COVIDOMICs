@@ -1,0 +1,23 @@
+BCR_data_scripts
+
+Scripts, metadata, intermediate processed data and figures for bulk and single-cell BCR analysis ################################################################################## The repository is divided in 3 sub-folders:
+
+    bulk
+
+This subfolder contains:
+
+    the scripts, numbered from 1 to 3 to analyse the bulk BCR data
+    the intermediate processed data utilized for the analysis and for the figures. This folder includes the clonotype tables of the bulk BCR data generated with MiXCR. In the file 200714_bulk_BCR.Rdata
+    the generated figures
+
+    single-cell
+
+This subfolder contains:
+
+    the scripts, numbered from 1 to 3 to analyse the bulk BCR data
+    the intermediate processed data utilized for the analysis and for the figures
+    the generated figures
+
+    metadata
+
+This subfolder contains the metadata files utilized for the analysis.
