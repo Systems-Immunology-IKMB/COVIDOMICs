@@ -56,7 +56,7 @@ InputCarnival$source_genesymbol <-
 InputCarnival$target_genesymbol <-
     gsub("-","_",InputCarnival$target_genesymbol)
 
-bad_int <- which(duplicated(paste(InputCarnival[,1],InputCarnival[,3])))
+bad_int <- which(InputCarnival[,1]==InputCarnival[,3])
 
 if ( length(bad_int) == 0 ) {
     InputCarnival <- InputCarnival
